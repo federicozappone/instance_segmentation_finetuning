@@ -9,8 +9,6 @@ import os
 import utils
 import transforms as T
 
-from PIL import Image
-
 from model import get_instance_segmentation_model
 from engine import train_one_epoch, evaluate
 
@@ -31,13 +29,18 @@ class MaskDataset(torch.utils.data.Dataset):
         img_path = os.path.join(self.root, "PNGImages", self.imgs[idx])
         mask_path = os.path.join(self.root, "PedMasks", self.masks[idx])
 
-        img = Image.open(img_path).convert("RGB")
+        # load image 
+        img = cv2.imread(img_path)
+        # bgr to rgb
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).astype(np.float32)
+        # rescaling from 0-255 to 0-1 
+        img /= 255.0
+
         # note that we haven't converted the mask to RGB,
         # because each color corresponds to a different instance
         # with 0 being background
-        mask = Image.open(mask_path)
+        mask = cv2.imread(mask_path)[:, :, 0]
 
-        mask = np.array(mask)
         # instances are encoded as different colors
         obj_ids = np.unique(mask)
         # first id is the background, so remove it
